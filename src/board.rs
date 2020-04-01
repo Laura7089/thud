@@ -1,4 +1,5 @@
 use crate::coord::Coord;
+use crate::direction::Direction;
 use crate::piece::Piece;
 use crate::ThudError;
 
@@ -10,6 +11,31 @@ pub struct Board {
 }
 
 impl Board {
+    fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {
+        let modifier = dir.modifier();
+        let (x, y) = loc.value();
+        let mut current = 0;
+
+        let mut result: Vec<(Coord, Piece)> = Vec::new();
+
+        while let Ok(coord) = Coord::zero_based(
+            match modifier.0 {
+                1 => x + current,
+                -1 => x - current,
+                _ => x,
+            },
+            match modifier.1 {
+                1 => y + current,
+                -1 => y - current,
+                _ => y,
+            },
+        ) {
+            result.push((coord, self.get(coord)));
+            current += 1;
+        }
+        result
+    }
+
     /// Get a fresh `Board`, with [`Piece`](enum.Piece.html)s placed in the default positions for thud.
     pub fn fresh() -> Self {
         let mut filled_board = Self::default();
@@ -114,7 +140,7 @@ impl Board {
         };
 
         // Validate the move, ie. one space between them
-        if (troll - target).max() != 1 {
+        if troll.diff(target).max() != 1 {
             return Err(ThudError::IllegalMove);
         }
 
@@ -125,11 +151,24 @@ impl Board {
     }
 
     pub fn move_dwarf(&mut self, dwarf: Coord, target: Coord) -> Result<(), ThudError> {
-        if self.get(dwarf) != Piece::Dwarf || self.get(target) != Piece::Empty {
+        if self.get(dwarf) != Piece::Dwarf || self.get(target) != Piece::Empty || dwarf == target {
             return Err(ThudError::IllegalMove);
         }
 
-        // TODO: check there are no obstacles between the dwarf and the destination
+        // Raycast to check for obstacles
+        let cast;
+        if let Ok(dir) = Direction::obtain(dwarf, target) {
+            cast = self.cast(dwarf, dir);
+        } else {
+            return Err(ThudError::IllegalMove);
+        }
+
+        for (_, piece) in cast {
+            if piece != Piece::Empty {
+                return Err(ThudError::IllegalMove);
+            }
+        }
+
         Ok(())
     }
 }
@@ -185,7 +224,10 @@ mod tests {
 
     #[test_case((8, 7), (9, 7))]
     #[test_case((8, 8), (9, 9))]
+    #[test_case((8, 8), (10, 10) => panics "no")]
     fn move_troll(src: (usize, usize), dest: (usize, usize)) {
-        Board::fresh().move_troll(src.into(), dest.into()).unwrap();
+        Board::fresh()
+            .move_troll(src.into(), dest.into())
+            .expect("no");
     }
 }

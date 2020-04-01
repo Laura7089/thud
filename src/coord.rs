@@ -50,21 +50,8 @@ impl Coord {
             self.y
         }
     }
-}
 
-impl From<(usize, usize)> for Coord {
-    fn from((x, y): (usize, usize)) -> Self {
-        Coord::zero_based(x, y).expect(&*format!(
-            "Tried to do a 'from' conversion using invalid coordinates x={}, y={}",
-            x, y
-        ))
-    }
-}
-
-impl std::ops::Sub for Coord {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self {
+    pub fn diff(self, rhs: Self) -> Self {
         let new_x = if self.x > rhs.x {
             self.x - rhs.x
         } else {
@@ -77,6 +64,12 @@ impl std::ops::Sub for Coord {
         };
 
         Coord { x: new_x, y: new_y }
+    }
+}
+
+impl From<(usize, usize)> for Coord {
+    fn from((x, y): (usize, usize)) -> Self {
+        Coord::zero_based(x, y).unwrap()
     }
 }
 
@@ -93,16 +86,12 @@ mod tests {
     #[test_case(13, 5)]
     #[test_case(14, 6)]
     #[test_case(14, 8)]
-    fn valid_coordinates(x: usize, y: usize) -> Coord {
-        (x, y).into()
-    }
-
     #[test_case(0, 0 => panics "no")]
     #[test_case(4, 0 => panics "no")]
     #[test_case(10, 0 => panics "no")]
     #[test_case(14, 4 => panics "no")]
     #[test_case(14, 10 => panics "no")]
-    fn invalid_coordinates(x: usize, y: usize) {
+    fn valid_coordinates(x: usize, y: usize) {
         Coord::zero_based(x, y).expect("no");
     }
 
@@ -123,7 +112,10 @@ mod tests {
     #[test_case((7,7), (9,8) => 2)]
     #[test_case((7,7), (10,7) => 3)]
     #[test_case((8,7), (9,7) => 1)]
-    fn subtract_then_max(lhs: (usize, usize), rhs: (usize, usize)) -> usize {
-        (Coord::zero_based(lhs.0, lhs.1).unwrap() - Coord::zero_based(rhs.0, rhs.1).unwrap()).max()
+    fn diff_then_max(lhs: (usize, usize), rhs: (usize, usize)) -> usize {
+        Coord::zero_based(lhs.0, lhs.1)
+            .unwrap()
+            .diff(Coord::zero_based(rhs.0, rhs.1).unwrap())
+            .max()
     }
 }

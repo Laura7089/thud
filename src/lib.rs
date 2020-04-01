@@ -1,5 +1,6 @@
 mod board;
 mod coord;
+mod direction;
 mod piece;
 
 pub use board::Board;
