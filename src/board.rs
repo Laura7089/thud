@@ -1,6 +1,7 @@
 use crate::coord::Coord;
 use crate::direction::Direction;
 use crate::piece::Piece;
+use crate::Player;
 use crate::ThudError;
 
 /// Represents the positioning of the Thud [`Piece`s](enum.Piece.html) on the board
@@ -283,8 +284,6 @@ impl Board {
                     // Count the dwarves behind us
                     let line_behind = self.count_line(loc, dir.opposite(), Piece::Dwarf);
 
-                    // Follow down each cast, getting our length down it, the coordinate we're at
-                    // and the piece there
                     for (count, (poss, piece)) in self.cast(loc, dir).into_iter().enumerate() {
                         match piece {
                             // If it's empty, we can move into it!
@@ -297,8 +296,6 @@ impl Board {
                                 }
                                 break;
                             }
-                            // If there's something else in the way, don't add our location and
-                            // stop looking down this cast
                             _ => break,
                         }
                     }
@@ -310,10 +307,9 @@ impl Board {
                 for dir in Direction::all() {
                     let behind_line = self.count_line(loc, dir.opposite(), Piece::Troll);
                     for (poss, piece) in &self.cast(loc, dir)[..behind_line] {
-                        if *piece == Piece::Empty {
-                            avail.push(*poss);
-                        } else {
-                            break;
+                        match *piece {
+                            Piece::Empty => avail.push(*poss),
+                            _ => break,
                         }
                     }
                 }
@@ -322,6 +318,28 @@ impl Board {
         }
 
         avail
+    }
+
+    pub fn winner(&self) -> Option<Player> {
+        // Check dwarves
+        let mut dwarf_moves = 0;
+        for dwarf in self.get_army(Piece::Dwarf) {
+            dwarf_moves += self.available_moves(dwarf).len();
+        }
+
+        // Check dwarves
+        let mut troll_moves = 0;
+        for troll in self.get_army(Piece::Troll) {
+            troll_moves += self.available_moves(troll).len();
+        }
+
+        if dwarf_moves == 0 {
+            Some(Player::Troll)
+        } else if troll_moves == 0 {
+            Some(Player::Troll)
+        } else {
+            None
+        }
     }
 
     fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {
