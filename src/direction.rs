@@ -95,6 +95,11 @@ impl Direction {
     pub fn modify(&self, loc: Coord) -> Result<Coord, ThudError> {
         let modifier = self.modifier();
         let (x, y) = loc.value();
+
+        if (x == 0 && modifier.0 == -1) || (y == 0 && modifier.1 == -1) {
+            return Err(ThudError::MathError);
+        }
+
         let new = (
             match modifier.0 {
                 1 => x + 1,

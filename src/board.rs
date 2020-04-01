@@ -202,7 +202,7 @@ impl Board {
             return Err(ThudError::IllegalMove);
         }
 
-        for target in self.get_adjacent(troll) {
+        for (target, _) in self.get_adjacent(troll) {
             if self.get(target) == Piece::Dwarf {
                 self.place(target, Piece::Empty);
             }
