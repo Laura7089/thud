@@ -28,6 +28,11 @@ impl Coord {
         }
     }
 
+    /// Check whether the given `(x, y)` pair is a valid coordinate pair
+    pub fn valid(x: usize, y: usize) -> bool {
+        Coord::check_coords(x, y).is_ok()
+    }
+
     /// Make a new `Coord` using 0-based axes values.
     ///
     /// The squares are addressed as if the board were a 15x15 square with the bottom-left square
