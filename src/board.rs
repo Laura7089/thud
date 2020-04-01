@@ -100,16 +100,12 @@ impl Board {
     /// Get a vector of valid coordinates in the 8 possible adjacent squares to the one given.
     ///
     /// Coordinates out of board bounds will not be included.
-    pub fn get_adjacent(&self, square: Coord) -> Vec<Coord> {
-        let mut adjacent: Vec<Coord> = Vec::with_capacity(8);
-        let (x, y) = square.value();
+    pub fn get_adjacent(&self, square: Coord) -> Vec<(Coord, Piece)> {
+        let mut adjacent: Vec<(Coord, Piece)> = Vec::with_capacity(8);
 
-        // Horrific nested if's to avoid addressing outside arrays
-        for x_off in (if x != 0 { x - 1 } else { x })..(if x != 14 { x } else { x + 1 }) {
-            for y_off in (if y != 0 { y - 1 } else { y })..(if y != 14 { y } else { y + 1 }) {
-                if let Ok(coord) = Coord::zero_based(x + x_off, y + y_off) {
-                    adjacent.push(coord);
-                }
+        for dir in Direction::all() {
+            if let Ok(coord) = dir.modify(square) {
+                adjacent.push((coord, self.get(coord)));
             }
         }
         adjacent
