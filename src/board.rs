@@ -8,7 +8,7 @@ use crate::ThudError;
 /// **Note**: `Board` is not aware of the whole state of the game, only the position of the pieces.
 /// As a result, the movement methods provided only perform checks according to the pieces on the
 /// board, but they will *not* check whether the move is valid in terms of turn progress - you
-/// should use the methods on [`ThudState`](struct.ThudState.html) for that.
+/// should use the methods on `ThudState` for that.
 #[derive(Debug, Default)]
 pub struct Board {
     // 1-based indexing
@@ -225,6 +225,21 @@ impl Board {
         Ok(())
     }
 
+    pub fn dwarf_hurl(&mut self, dwarf: Coord, target: Coord) -> MoveResult {
+        if self.get(dwarf) != Piece::Dwarf
+            || self.get(target) != Piece::Troll
+            || self.get(target) != Piece::Empty
+        {
+            return Err(ThudError::IllegalMove);
+        }
+        self.verify_clear(dwarf, target)?;
+
+        self.place(dwarf, Piece::Empty);
+        self.place(target, Piece::Dwarf);
+
+        Ok(())
+    }
+
     fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {
         let mut coord = loc;
         let mut result: Vec<(Coord, Piece)> = Vec::new();
@@ -240,13 +255,13 @@ impl Board {
         let dir = Direction::from_route(src, dest)?;
         // Skip the first element
         for (current, piece) in self.cast(src, dir) {
-            if piece != Piece::Empty {
-                // There is something in the way
-                return Err(ThudError::Obstacle);
-            }
             if current == dest {
                 // Stop at the target square
                 break;
+            }
+            if piece != Piece::Empty {
+                // There is something in the way
+                return Err(ThudError::Obstacle);
             }
         }
 
@@ -350,6 +365,7 @@ mod tests {
     #[test_case((5, 0), Direction::UpLeft, Piece::Dwarf => 6)]
     #[test_case((5, 0), Direction::Up, Piece::Dwarf => 1)]
     #[test_case((6, 6), Direction::Up, Piece::Troll => 3)]
+    #[test_case((7, 6), Direction::Right, Piece::Troll => 2)]
     fn count_line(loc: (usize, usize), dir: Direction, piece: Piece) -> usize {
         Board::fresh().count_line(loc.into(), dir, piece)
     }
