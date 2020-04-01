@@ -22,6 +22,8 @@ pub enum ThudError {
     InvalidPosition,
     /// The requested move is not allowed according to the rules of Thud
     IllegalMove,
+    /// There is a piece blocking that move
+    Obstacle,
     /// An arithmetic error
     MathError,
 }

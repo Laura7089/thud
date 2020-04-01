@@ -32,12 +32,12 @@ impl Board {
             // Diagonals
             let calcs: Vec<Box<dyn Fn(usize) -> (usize, usize)>> = vec![
                 Box::new(|num| (num, 5 - num)),
-                Box::new(|num| (num + 5, num)),
-                Box::new(|num| (num, num + 5)),
-                Box::new(|num| (num + 5, 5 - num)),
+                Box::new(|num| (num + 9, num)),
+                Box::new(|num| (num, num + 9)),
+                Box::new(|num| (num + 9, 14 - num)),
             ];
             for calc in calcs {
-                for dwarf in (0..5).map(|seed| calc(seed).into()) {
+                for dwarf in (0..=5).map(|seed| calc(seed).into()) {
                     filled_board.place(dwarf, Piece::Dwarf);
                 }
             }
@@ -226,41 +226,40 @@ impl Board {
     }
 
     fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {
-        let coord = loc;
+        let mut coord = loc;
         let mut result: Vec<(Coord, Piece)> = Vec::new();
 
-        while let Ok(coord) = dir.modify(coord) {
-            result.push((coord, self.get(coord)));
+        while let Ok(next) = dir.modify(coord) {
+            result.push((next, self.get(next)));
+            coord = next;
         }
         result
     }
 
     fn verify_clear(&self, src: Coord, dest: Coord) -> MoveResult {
-        // Raycast to check for obstacles
-        if let Ok(dir) = Direction::from_route(src, dest) {
-            let cast = self.cast(src, dir);
-            // Skip the first member of the list, which is the square with the src on
-            for (current, piece) in &cast[1..] {
-                if *piece != Piece::Empty {
-                    // There is something in the way
-                    return Err(ThudError::IllegalMove);
-                }
-                if *current == dest {
-                    // Stop at the target square
-                    break;
-                }
+        let dir = Direction::from_route(src, dest)?;
+        // Skip the first element
+        for (current, piece) in self.cast(src, dir) {
+            if piece != Piece::Empty {
+                // There is something in the way
+                return Err(ThudError::Obstacle);
             }
-        } else {
-            // The source and target are not on a straight line
-            return Err(ThudError::IllegalMove);
+            if current == dest {
+                // Stop at the target square
+                break;
+            }
         }
 
         Ok(())
     }
 
     fn count_line(&self, start: Coord, dir: Direction, piece: Piece) -> usize {
-        let mut length = 0;
-        for (_, cur_piece) in self.cast(start, dir) {
+        if self.get(start) != piece {
+            return 0;
+        }
+
+        let mut length = 1;
+        for (_, cur_piece) in dbg!(self.cast(start, dir)) {
             if cur_piece != piece {
                 break;
             }
@@ -305,11 +304,53 @@ mod tests {
 
     #[test_case((8, 7), (9, 7))]
     #[test_case((8, 8), (9, 9))]
-    #[test_case((8, 8), (10, 10) => panics "no")]
-    #[test_case((8, 8), (7, 7) => panics "no")]
-    fn troll_move_fresh(src: (usize, usize), dest: (usize, usize)) {
+    #[test_case((8, 8), (10, 10) => panics "")]
+    #[test_case((8, 8), (7, 7) => panics "")]
+    fn troll_move(src: (usize, usize), dest: (usize, usize)) {
         Board::fresh()
             .troll_move(src.into(), dest.into())
-            .expect("no");
+            .expect("");
+    }
+
+    #[test_case((7, 6), Direction::Up => 8)]
+    #[test_case((5, 0), Direction::Down => 0)]
+    #[test_case((3, 6), Direction::UpLeft => 3)]
+    #[test_case((14, 9), Direction::DownLeft => 9)]
+    fn cast_len(loc: (usize, usize), dir: Direction) -> usize {
+        dbg!(Board::default().cast(loc.into(), dir)).len()
+    }
+
+    #[test]
+    fn cast_alone() {
+        let mut board = Board::default();
+        board.place((7, 7).into(), Piece::Thudstone);
+
+        let cast = board.cast((7, 6).into(), Direction::Up);
+
+        assert_eq!(cast[0], ((7, 7).into(), Piece::Thudstone));
+
+        let mut current = 2;
+        for (next, piece) in &cast[1..] {
+            assert_eq!(*piece, Piece::Empty);
+            assert_eq!(*next, (7, 6 + current).into());
+            current += 1;
+        }
+    }
+
+    #[test_case((6, 7), (0, 7))]
+    #[test_case((6, 6), (3, 3))]
+    #[test_case((8, 0), (13, 5))]
+    #[test_case((7, 7), (0, 7) => panics "")]
+    fn verify_clear(src: (usize, usize), dest: (usize, usize)) {
+        Board::fresh()
+            .verify_clear(src.into(), dest.into())
+            .expect("")
+    }
+
+    #[test_case((5, 0), Direction::UpLeft, Piece::Dwarf => 6)]
+    #[test_case((5, 0), Direction::Up, Piece::Dwarf => 1)]
+    #[test_case((6, 6), Direction::Up, Piece::Troll => 3)]
+    fn count_line(loc: (usize, usize), dir: Direction, piece: Piece) -> usize {
+        Board::fresh().count_line(loc.into(), dir, piece)
     }
 }

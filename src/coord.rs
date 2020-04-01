@@ -18,8 +18,8 @@ impl Coord {
             || (sum < 5)
             || (sum > 23)
             // Outer corners
-            || (15 - x + y < 6)
-            || (15 + x - y < 6);
+            || (9 + y < x)
+            || (9 + x < y);
 
         if invalid {
             Err(ThudError::InvalidPosition)
