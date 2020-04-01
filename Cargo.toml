@@ -1,9 +1,9 @@
 [package]
 name = "thud"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Laura Demkowicz-Duffy <edward70891@gmail.com>"]
 edition = "2018"
-license-file = "LICENSE"
+license-file = "GPL-3.0"
 description = "A library for the board game Thud as seen in the Discworld series of books"
 homepage = "https://github.com/Laura7089/thud"
 repository = "https://github.com/Laura7089/thud.git"
