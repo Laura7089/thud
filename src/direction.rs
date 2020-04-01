@@ -21,12 +21,12 @@ impl Direction {
         vec![Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft]
     }
 
-    /// Use two `Coord`s to get a `Direction` from one to the other
+    /// Use two [`Coord`s](struct.Coord.html) to get a `Direction` from one to the other
     ///
-    /// Returns `Err(ThudError::MathError)` if:
+    /// Returns [`Err(ThudError::MathError)`](enum.ThudError.html) if:
     ///
-    /// - The two `Coord`s are not plottable on a straight line together
-    /// - The two `Coord`s are equal
+    /// - The two [`Coord`s](enum.Coord.html) are not plottable on a straight line together
+    /// - The two [`Coord`s](enum.Coord.html) are equal
     pub fn from_route(start: Coord, end: Coord) -> Result<Direction, ThudError> {
         if start == end {
             return Err(ThudError::MathError);
@@ -66,7 +66,7 @@ impl Direction {
         }
     }
 
-    /// Get a tuple representing the changes needed to a `Coord` in order to "move" it in the
+    /// Get a tuple representing the changes needed to a [`Coord`](struct.Coord.html) in order to "move" it in the
     /// `Direction` given by `self`.
     ///
     /// Example:
@@ -89,9 +89,9 @@ impl Direction {
         }
     }
 
-    /// Return a `Coord` equal to `loc` offset by one square in the direction given by `self`.
+    /// Return a [`Coord`](struct.Coord.html) equal to `loc` offset by one square in the direction given by `self`.
     ///
-    /// Returns `Err(ThudError::MathError)` if this movement would place the `Coord` out of bounds.
+    /// Returns [`Err(ThudError::MathError)`](enum.ThudError.html) if this movement would place the [`Coord`](struct.Coord.html) out of bounds.
     pub fn modify(&self, loc: Coord) -> Result<Coord, ThudError> {
         let modifier = self.modifier();
         let (x, y) = loc.value();

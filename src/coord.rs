@@ -1,6 +1,6 @@
 use crate::ThudError;
 
-/// Checked container for a coordinate to address into a `Board`
+/// Checked container for a coordinate to address into a [`Board`](enum.Board.html)
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Coord {
     x: usize,
@@ -34,7 +34,7 @@ impl Coord {
     /// being (0, 0); confusingly, this is out of bounds. See the official Thud rules for the
     /// shape of the board.
     ///
-    /// Will return `Err(ThudError::InvalidPosition)` if the coordinates supplied are out of bounds
+    /// Will return [`Err(ThudError::InvalidPosition)`](enum.ThudError.html) if the coordinates supplied are out of bounds
     /// of the board.
     pub fn zero_based(x: usize, y: usize) -> Result<Self, ThudError> {
         Coord::check_coords(x, y)?;
@@ -56,7 +56,7 @@ impl Coord {
 
     /// Return the larger of the two coordinates.
     ///
-    /// Useful for use with `.diff()` to get the orthogonal/diagonal distance between two squares:
+    /// Useful for use with [`.diff()`](#method.diff) to get the orthogonal/diagonal distance between two squares:
     /// ```
     /// use thud::Coord;
     ///
