@@ -8,7 +8,7 @@ use crate::ThudError;
 /// **Note**: `Board` is not aware of the whole state of the game, only the position of the pieces.
 /// As a result, the movement methods provided only perform checks according to the pieces on the
 /// board, but they will *not* check whether the move is valid in terms of turn progress - you
-/// should use the methods on [`ThudState`](struct.ThudState.html) for that.
+/// should use the methods on [`Thud`](struct.Thud.html) for that.
 #[derive(Debug, Default)]
 pub struct Board {
     // 1-based indexing
@@ -140,8 +140,9 @@ impl Board {
     ///
     /// Returns [`Err(ThudError::IllegalMove)`](enum.ThudError.html) if:
     ///
-    /// - The troll square is not [`Piece::Troll`](enum.Piece.html)
-    /// - The target square is not [`Piece::Empty`](enum.Piece.html)
+    /// - The `troll` square is not [`Piece::Troll`](enum.Piece.html)
+    /// - The `target` square is not [`Piece::Empty`](enum.Piece.html)
+    /// - There are no [`Piece::Dwarf`s](enum.Piece.html) adjacent to the `target` square
     ///
     /// Returns [`Err(ThudError::Obstacle)`](enum.ThudError.html) if the target square is obstructed
     ///
@@ -153,10 +154,20 @@ impl Board {
         }
         self.verify_clear(troll, target)?;
 
+        let dwarves: Vec<(Coord, Piece)> = self
+            .get_adjacent(target)
+            .into_iter()
+            .filter(|(_, x)| *x == Piece::Dwarf)
+            .collect();
+
+        if dwarves.len() == 0 {
+            return Err(ThudError::IllegalMove);
+        }
+
         let troll_len = self.count_line(
             troll,
             // unwrap because `self.verify_clear` would return an error if we weren't in a straight line
-            Direction::from_route(troll, target).unwrap().opposite(),
+            Direction::from_route(target, troll).unwrap(),
             Piece::Troll,
         );
         if troll.diff(target).max() > troll_len {
@@ -181,38 +192,28 @@ impl Board {
     /// [`Direction`s](enum.Direction.html) will be ignored.
     ///
     /// Returns [`Err(ThudError::IllegalMove)`](enum.ThudError.html) if the piece at `troll` is not [`Piece::Troll`](enum.Piece.html).
-    pub fn troll_capture_selective(&mut self, troll: Coord, targets: Vec<Direction>) -> MoveResult {
+    pub fn troll_capture(
+        &mut self,
+        troll: Coord,
+        targets: Vec<Direction>,
+    ) -> Result<usize, ThudError> {
         if self.get(troll) != Piece::Troll {
             return Err(ThudError::IllegalMove);
         }
+
+        let mut captured = 0;
 
         // Grab all the true coordinates from `targets`, returning an error if any are invalid
         for target in targets.into_iter() {
             if let Ok(coord) = target.modify(troll) {
                 if self.get(coord) == Piece::Dwarf {
                     self.place(coord, Piece::Empty);
+                    captured += 1;
                 }
             }
         }
 
-        Ok(())
-    }
-
-    /// Use a troll to capture all the dwarves adjacent to it.
-    ///
-    /// Returns [`Err(ThudError::IllegalMove)`](enum.ThudError.html) if the piece at `troll` is not [`Piece::Troll`](enum.Piece.html).
-    pub fn troll_capture_all(&mut self, troll: Coord) -> MoveResult {
-        if self.get(troll) != Piece::Troll {
-            return Err(ThudError::IllegalMove);
-        }
-
-        for (target, _) in self.get_adjacent(troll) {
-            if self.get(target) == Piece::Dwarf {
-                self.place(target, Piece::Empty);
-            }
-        }
-
-        Ok(())
+        Ok(captured)
     }
 
     /// Move a dwarf.

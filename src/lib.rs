@@ -2,14 +2,16 @@ mod board;
 mod coord;
 mod direction;
 mod piece;
+mod state;
 
 pub use board::Board;
 pub use coord::Coord;
 pub use direction::Direction;
 pub use piece::Piece;
+pub use state::Thud;
 
 /// Represents one of the two Thud players
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Player {
     Dwarf,
     Troll,
@@ -28,20 +30,6 @@ pub enum ThudError {
     LineTooShort,
     /// An arithmetic error
     MathError,
-}
-
-/// Stores the current state of a game of Thud
-pub struct ThudState {
-    pub board: Board,
-    turn: Player,
-}
-
-impl ThudState {
-    pub fn get_turn(&self) -> Player {
-        self.turn
-    }
-
-    pub fn winner(&self) -> Option<Player> {
-        None
-    }
+    /// That action is not allowed at this time
+    BadAction,
 }
