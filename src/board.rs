@@ -4,11 +4,18 @@ use crate::piece::Piece;
 use crate::ThudError;
 
 /// A struct representing the positioning of the Thud [`Pieces`](enum.Piece.html) on the board.
+///
+/// **Note**: `Board` is not aware of the whole state of the game, only the position of the pieces.
+/// As a result, the movement methods provided only perform checks according to the pieces on the
+/// board, but they will *not* check whether the move is valid in terms of turn progress - you
+/// should use the methods on [`ThudState`](struct.ThudState.html) for that.
 #[derive(Debug, Default)]
 pub struct Board {
     // 1-based indexing
     squares: [[Piece; 15]; 15],
 }
+
+type MoveResult = Result<(), ThudError>;
 
 impl Board {
     /// Get a fresh `Board`, with [`Piece`](enum.Piece.html)s placed in the default positions for thud.
@@ -119,9 +126,53 @@ impl Board {
         result
     }
 
-    pub fn move_troll(&mut self, troll: Coord, target: Coord) -> Result<(), ThudError> {
+    fn verify_clear(&self, src: Coord, dest: Coord) -> MoveResult {
+        // Raycast to check for obstacles
+        if let Ok(dir) = Direction::obtain(src, dest) {
+            let cast = self.cast(src, dir);
+            // Skip the first member of the list, which is the square with the src on
+            for (current, piece) in &cast[1..] {
+                if *piece != Piece::Empty {
+                    // There is something in the way
+                    return Err(ThudError::IllegalMove);
+                }
+                if *current == dest {
+                    // Stop at the target square
+                    break;
+                }
+            }
+        } else {
+            // The source and target are not on a straight line
+            return Err(ThudError::IllegalMove);
+        }
+
+        Ok(())
+    }
+
+    fn count_line(&self, start: Coord, dir: Direction, piece: Piece) -> usize {
+        let mut length = 0;
+        let cast = self.cast(start, dir);
+
+        for (_, cur_piece) in cast {
+            if cur_piece != piece {
+                break;
+            }
+            length += 1;
+        }
+
+        length
+    }
+
+    /// Move a troll.
+    ///
+    /// Returns a `ThudError::IllegalMove` if:
+    ///
+    /// - The troll square is not `Piece::Troll`
+    /// - The target square is not `Piece::Empty`
+    /// - The target square is more than 1 squares away from the troll square
+    pub fn troll_move(&mut self, troll: Coord, target: Coord) -> MoveResult {
         // Check the target is clear and the place we're moving from actually has a troll
-        if self.get(troll) != Piece::Troll || self.get(target) != Piece::Empty {
+        if (self.get(troll), self.get(target)) != (Piece::Troll, Piece::Empty) {
             return Err(ThudError::IllegalMove);
         };
 
@@ -137,28 +188,63 @@ impl Board {
         Ok(())
     }
 
-    pub fn move_dwarf(&mut self, dwarf: Coord, target: Coord) -> Result<(), ThudError> {
-        // Check the target is clear and the place we're moving from actually has a dwarf
-        if self.get(dwarf) != Piece::Dwarf || self.get(target) != Piece::Empty || dwarf == target {
+    /// "Shove" a troll.
+    ///
+    /// Returns a `ThudError::IllegalMove` if:
+    ///
+    /// - The troll square is not `Piece::Troll`
+    /// - The target square is not `Piece::Empty`
+    /// - The target square is obstructed
+    /// - The distance to the target square is larger than the length of the lines of trolls going
+    /// in the other direction
+    pub fn troll_shove(&mut self, troll: Coord, target: Coord) -> MoveResult {
+        if (self.get(troll), self.get(target)) != (Piece::Troll, Piece::Empty) {
+            return Err(ThudError::IllegalMove);
+        }
+        self.verify_clear(troll, target)?;
+
+        let troll_len = self.count_line(
+            troll,
+            // unwrap because `self.verify_clear` would return an error if we weren't in a straight line
+            Direction::obtain(troll, target).unwrap().opposite(),
+            Piece::Troll,
+        );
+        if troll.diff(target).max() > troll_len {
+            // Move is too far
             return Err(ThudError::IllegalMove);
         }
 
-        // Raycast to check for obstacles
-        let cast;
-        if let Ok(dir) = Direction::obtain(dwarf, target) {
-            cast = self.cast(dwarf, dir);
-        } else {
+        // Move the troll
+        self.place(troll, Piece::Empty);
+        self.place(target, Piece::Troll);
+
+        Ok(())
+    }
+
+    pub fn troll_capture(&mut self, troll: Coord, targets: Vec<Direction>) -> MoveResult {
+        if self.get(troll) != Piece::Troll {
             return Err(ThudError::IllegalMove);
         }
-        // Skip the first member of the list, which is our square
-        for (current, piece) in &cast[1..] {
-            if *piece != Piece::Empty {
-                return Err(ThudError::IllegalMove);
-            }
-            if *current == target {
-                break;
+
+        // Grab all the true coordinates from `targets`, returning an error if any are invalid
+        for target in targets.into_iter() {
+            let target_raw = target.modify(troll);
+            if let Ok(coord) = Coord::zero_based(target_raw.0, target_raw.1) {
+                if self.get(coord) == Piece::Dwarf {
+                    self.place(coord, Piece::Empty);
+                }
             }
         }
+
+        Ok(())
+    }
+
+    pub fn dwarf_move(&mut self, dwarf: Coord, target: Coord) -> MoveResult {
+        // Check the target is clear and the place we're moving from actually has a dwarf
+        if (self.get(dwarf), self.get(target)) != (Piece::Dwarf, Piece::Empty) {
+            return Err(ThudError::IllegalMove);
+        }
+        self.verify_clear(dwarf, target)?;
 
         // Move the dwarf
         self.place(dwarf, Piece::Empty);
@@ -209,20 +295,21 @@ mod tests {
         assert_eq!(board.get((0, 5).into()), Piece::Dwarf);
     }
 
-    #[test_case(0, 7)]
-    #[test_case(7, 0)]
-    #[test_case(7, 14)]
-    #[test_case(14, 7)]
-    fn adjacent_safe(x: usize, y: usize) {
-        Board::default().get_adjacent((x, y).into());
+    #[test_case(0, 7 => 5)]
+    #[test_case(7, 0 => 5)]
+    #[test_case(7, 14 => 5)]
+    #[test_case(14, 7 => 5)]
+    fn adjacent(x: usize, y: usize) -> usize {
+        Board::default().get_adjacent((x, y).into()).len()
     }
 
     #[test_case((8, 7), (9, 7))]
     #[test_case((8, 8), (9, 9))]
     #[test_case((8, 8), (10, 10) => panics "no")]
-    fn move_troll(src: (usize, usize), dest: (usize, usize)) {
+    #[test_case((8, 8), (7, 7) => panics "no")]
+    fn troll_move(src: (usize, usize), dest: (usize, usize)) {
         Board::fresh()
-            .move_troll(src.into(), dest.into())
+            .troll_move(src.into(), dest.into())
             .expect("no");
     }
 }

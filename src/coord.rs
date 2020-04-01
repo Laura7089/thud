@@ -28,6 +28,14 @@ impl Coord {
         }
     }
 
+    /// Make a new `Coord` using 0-based axes values.
+    ///
+    /// The squares are addressed as if the board were a 15x15 square with the bottom-left square
+    /// being (0, 0); confusingly, this is out of bounds. See the official Thud rules for the
+    /// shape of the board.
+    ///
+    /// Will return `Err(ThudError::InvalidPosition)` if the coordinates supplied are out of bounds
+    /// of the board.
     pub fn zero_based(x: usize, y: usize) -> Result<Self, ThudError> {
         Coord::check_coords(x, y)?;
         Ok(Coord { x, y })
@@ -38,11 +46,27 @@ impl Coord {
         Self::zero_based(x, y)
     }
 
-    /// Get the values inside the coordinate, zero-based
+    /// Get the values inside the coordinate, zero-based.
+    ///
+    /// Since `Coord` is bound-checked on creation, the values returned here are guaranteed to be
+    /// valid coordinates on the board.
     pub fn value(&self) -> (usize, usize) {
         (self.x, self.y)
     }
 
+    /// Return the larger of the two coordinates.
+    ///
+    /// Useful for use with `.diff()` to get the orthogonal/diagonal distance between two squares:
+    /// ```
+    /// use thud::Coord;
+    ///
+    /// let source = Coord::zero_based(7,7).unwrap();
+    /// let destination1 = Coord::zero_based(10, 10).unwrap();
+    /// let destination2 = Coord::zero_based(12, 7).unwrap();
+    ///
+    /// assert_eq!(source.diff(destination1).max(), 3);
+    /// assert_eq!(source.diff(destination2).max(), 5);
+    /// ```
     pub fn max(&self) -> usize {
         if self.x > self.y {
             self.x
@@ -51,6 +75,19 @@ impl Coord {
         }
     }
 
+    /// Return the *absolute* difference between two `Coord`s.
+    ///
+    /// Example:
+    /// ```
+    /// use thud::Coord;
+    ///
+    /// let source = Coord::zero_based(7,7).unwrap();
+    /// let destination1 = Coord::zero_based(10, 10).unwrap();
+    /// let destination2 = Coord::zero_based(12, 7).unwrap();
+    ///
+    /// assert_eq!(source.diff(destination1), (3, 3).into());
+    /// assert_eq!(source.diff(destination2), (5, 0).into());
+    /// ```
     pub fn diff(self, rhs: Self) -> Self {
         let new_x = if self.x > rhs.x {
             self.x - rhs.x

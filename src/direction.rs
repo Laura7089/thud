@@ -12,6 +12,11 @@ pub enum Direction {
 }
 
 impl Direction {
+    pub fn all() -> Vec<Self> {
+        use Direction::*;
+        vec![Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft]
+    }
+
     pub fn modifier(&self) -> (isize, isize) {
         match self {
             Self::Up => (0, 1),
@@ -75,5 +80,19 @@ impl Direction {
                 _ => y,
             },
         )
+    }
+
+    pub fn opposite(&self) -> Self {
+        use Direction::*;
+        match self {
+            Up => Down,
+            UpRight => DownLeft,
+            Right => Left,
+            DownRight => UpLeft,
+            Down => Up,
+            DownLeft => UpRight,
+            Left => Right,
+            UpLeft => DownRight,
+        }
     }
 }
