@@ -11,31 +11,6 @@ pub struct Board {
 }
 
 impl Board {
-    fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {
-        let modifier = dir.modifier();
-        let (x, y) = loc.value();
-        let mut current = 0;
-
-        let mut result: Vec<(Coord, Piece)> = Vec::new();
-
-        while let Ok(coord) = Coord::zero_based(
-            match modifier.0 {
-                1 => x + current,
-                -1 => x - current,
-                _ => x,
-            },
-            match modifier.1 {
-                1 => y + current,
-                -1 => y - current,
-                _ => y,
-            },
-        ) {
-            result.push((coord, self.get(coord)));
-            current += 1;
-        }
-        result
-    }
-
     /// Get a fresh `Board`, with [`Piece`](enum.Piece.html)s placed in the default positions for thud.
     pub fn fresh() -> Self {
         let mut filled_board = Self::default();
@@ -133,6 +108,17 @@ impl Board {
         adjacent
     }
 
+    fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {
+        let mut current = dir.modify(loc);
+        let mut result: Vec<(Coord, Piece)> = Vec::new();
+
+        while let Ok(coord) = Coord::zero_based(current.0, current.1) {
+            result.push((coord, self.get(coord)));
+            current = dir.modify(coord);
+        }
+        result
+    }
+
     pub fn move_troll(&mut self, troll: Coord, target: Coord) -> Result<(), ThudError> {
         // Check the target is clear and the place we're moving from actually has a troll
         if self.get(troll) != Piece::Troll || self.get(target) != Piece::Empty {
@@ -144,6 +130,7 @@ impl Board {
             return Err(ThudError::IllegalMove);
         }
 
+        // Move the troll
         self.place(troll, Piece::Empty);
         self.place(target, Piece::Troll);
 
@@ -151,6 +138,7 @@ impl Board {
     }
 
     pub fn move_dwarf(&mut self, dwarf: Coord, target: Coord) -> Result<(), ThudError> {
+        // Check the target is clear and the place we're moving from actually has a dwarf
         if self.get(dwarf) != Piece::Dwarf || self.get(target) != Piece::Empty || dwarf == target {
             return Err(ThudError::IllegalMove);
         }
@@ -162,12 +150,19 @@ impl Board {
         } else {
             return Err(ThudError::IllegalMove);
         }
-
-        for (_, piece) in cast {
-            if piece != Piece::Empty {
+        // Skip the first member of the list, which is our square
+        for (current, piece) in &cast[1..] {
+            if *piece != Piece::Empty {
                 return Err(ThudError::IllegalMove);
             }
+            if *current == target {
+                break;
+            }
         }
+
+        // Move the dwarf
+        self.place(dwarf, Piece::Empty);
+        self.place(target, Piece::Dwarf);
 
         Ok(())
     }

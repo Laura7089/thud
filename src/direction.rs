@@ -59,4 +59,21 @@ impl Direction {
             Err("No straight path available")
         }
     }
+
+    pub fn modify(&self, loc: Coord) -> (usize, usize) {
+        let modifier = self.modifier();
+        let (x, y) = loc.value();
+        (
+            match modifier.0 {
+                1 => x + 1,
+                -1 => x - 1,
+                _ => x,
+            },
+            match modifier.1 {
+                1 => y + 1,
+                -1 => y - 1,
+                _ => y,
+            },
+        )
+    }
 }
