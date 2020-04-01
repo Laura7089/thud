@@ -275,6 +275,55 @@ impl Board {
         Ok(())
     }
 
+    pub fn available_moves(&self, loc: Coord) -> Vec<Coord> {
+        let mut avail: Vec<Coord> = Vec::new();
+        match self.get(loc) {
+            Piece::Dwarf => {
+                for dir in Direction::all() {
+                    // Count the dwarves behind us
+                    let line_behind = self.count_line(loc, dir.opposite(), Piece::Dwarf);
+
+                    // Follow down each cast, getting our length down it, the coordinate we're at
+                    // and the piece there
+                    for (count, (poss, piece)) in self.cast(loc, dir).into_iter().enumerate() {
+                        match piece {
+                            // If it's empty, we can move into it!
+                            Piece::Empty => avail.push(poss),
+                            // If there's a troll there, we can take it if we're not so far out
+                            // that our line of dwarves can't support us (but cannot jump over it)
+                            Piece::Troll => {
+                                if count <= line_behind {
+                                    avail.push(poss);
+                                }
+                                break;
+                            }
+                            // If there's something else in the way, don't add our location and
+                            // stop looking down this cast
+                            _ => break,
+                        }
+                    }
+                }
+            }
+            Piece::Troll => {
+                // Look as far as we are allowed by our line of trolls in all directions, and get
+                // any empty squares we find
+                for dir in Direction::all() {
+                    let behind_line = self.count_line(loc, dir.opposite(), Piece::Troll);
+                    for (poss, piece) in &self.cast(loc, dir)[..behind_line] {
+                        if *piece == Piece::Empty {
+                            avail.push(*poss);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+            _ => (),
+        }
+
+        avail
+    }
+
     fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {
         let mut coord = loc;
         let mut result: Vec<(Coord, Piece)> = Vec::new();
