@@ -24,6 +24,8 @@ pub enum ThudError {
     IllegalMove,
     /// There is a piece blocking that move
     Obstacle,
+    /// A shove or hurl has been attempted with too few supporting dwarves/trolls
+    LineTooShort,
     /// An arithmetic error
     MathError,
 }
