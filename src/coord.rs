@@ -1,6 +1,6 @@
 use crate::ThudError;
 
-/// A checked container for a coordinate to address into a [`Board`](strucy.Board.html).
+/// Checked container for a coordinate to address into a `Board`
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Coord {
     x: usize,

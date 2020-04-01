@@ -5,27 +5,28 @@ mod piece;
 
 pub use board::Board;
 pub use coord::Coord;
+pub use direction::Direction;
 pub use piece::Piece;
 
-/// An enum representing one of the two players.
+/// Represents one of the two Thud players
 #[derive(Debug, Copy, Clone)]
 pub enum Player {
     Dwarf,
     Troll,
 }
 
-/// An enum to represent when something has gone wrong in the game.
+/// Reports invalid action
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ThudError {
-    /// A coordinate was intialised with a position out of bounds.
+    /// A coordinate was intialised with a position out of bounds
     InvalidPosition,
-    /// The requested move is not allowed according to the rules of Thud.
+    /// The requested move is not allowed according to the rules of Thud
     IllegalMove,
-    /// An arithmetic error.
+    /// An arithmetic error
     MathError,
 }
 
-/// A struct storing the current state of a game of Thud.
+/// Stores the current state of a game of Thud
 pub struct ThudState {
     pub board: Board,
     turn: Player,

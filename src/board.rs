@@ -3,7 +3,7 @@ use crate::direction::Direction;
 use crate::piece::Piece;
 use crate::ThudError;
 
-/// A struct representing the positioning of the Thud [`Pieces`](enum.Piece.html) on the board.
+/// Represents the positioning of the Thud `Pieces` on the board
 ///
 /// **Note**: `Board` is not aware of the whole state of the game, only the position of the pieces.
 /// As a result, the movement methods provided only perform checks according to the pieces on the
@@ -115,54 +115,6 @@ impl Board {
         adjacent
     }
 
-    fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {
-        let mut current = dir.modify(loc);
-        let mut result: Vec<(Coord, Piece)> = Vec::new();
-
-        while let Ok(coord) = Coord::zero_based(current.0, current.1) {
-            result.push((coord, self.get(coord)));
-            current = dir.modify(coord);
-        }
-        result
-    }
-
-    fn verify_clear(&self, src: Coord, dest: Coord) -> MoveResult {
-        // Raycast to check for obstacles
-        if let Ok(dir) = Direction::obtain(src, dest) {
-            let cast = self.cast(src, dir);
-            // Skip the first member of the list, which is the square with the src on
-            for (current, piece) in &cast[1..] {
-                if *piece != Piece::Empty {
-                    // There is something in the way
-                    return Err(ThudError::IllegalMove);
-                }
-                if *current == dest {
-                    // Stop at the target square
-                    break;
-                }
-            }
-        } else {
-            // The source and target are not on a straight line
-            return Err(ThudError::IllegalMove);
-        }
-
-        Ok(())
-    }
-
-    fn count_line(&self, start: Coord, dir: Direction, piece: Piece) -> usize {
-        let mut length = 0;
-        let cast = self.cast(start, dir);
-
-        for (_, cur_piece) in cast {
-            if cur_piece != piece {
-                break;
-            }
-            length += 1;
-        }
-
-        length
-    }
-
     /// Move a troll.
     ///
     /// Returns a `ThudError::IllegalMove` if:
@@ -195,7 +147,7 @@ impl Board {
     /// - The troll square is not `Piece::Troll`
     /// - The target square is not `Piece::Empty`
     /// - The target square is obstructed
-    /// - The distance to the target square is larger than the length of the lines of trolls going
+    /// - The distance to the target square is larger than the length of the line of trolls going
     /// in the other direction
     pub fn troll_shove(&mut self, troll: Coord, target: Coord) -> MoveResult {
         if (self.get(troll), self.get(target)) != (Piece::Troll, Piece::Empty) {
@@ -206,7 +158,7 @@ impl Board {
         let troll_len = self.count_line(
             troll,
             // unwrap because `self.verify_clear` would return an error if we weren't in a straight line
-            Direction::obtain(troll, target).unwrap().opposite(),
+            Direction::from_route(troll, target).unwrap().opposite(),
             Piece::Troll,
         );
         if troll.diff(target).max() > troll_len {
@@ -221,18 +173,42 @@ impl Board {
         Ok(())
     }
 
-    pub fn troll_capture(&mut self, troll: Coord, targets: Vec<Direction>) -> MoveResult {
+    /// Use a troll to selectively capture dwarves around it.
+    ///
+    /// `targets` should be a `Vec` of `Direction`s in which to capture; if there is a dwarf above
+    /// your troll and you wish to capture it then `targets` should contain `Direction::Up`
+    ///
+    /// Note that any invalid (out of board limits) or duplicate `Direction`s will be ignored.
+    ///
+    /// Returns `Err(ThudError::IllegalMove)` if the piece at `troll` is not `Piece::Troll`.
+    pub fn troll_capture_selective(&mut self, troll: Coord, targets: Vec<Direction>) -> MoveResult {
         if self.get(troll) != Piece::Troll {
             return Err(ThudError::IllegalMove);
         }
 
         // Grab all the true coordinates from `targets`, returning an error if any are invalid
         for target in targets.into_iter() {
-            let target_raw = target.modify(troll);
-            if let Ok(coord) = Coord::zero_based(target_raw.0, target_raw.1) {
+            if let Ok(coord) = target.modify(troll) {
                 if self.get(coord) == Piece::Dwarf {
                     self.place(coord, Piece::Empty);
                 }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Use a troll to capture all the dwarves adjacent to it.
+    ///
+    /// Returns `Err(ThudError::IllegalMove)` if the piece at `troll` is not `Piece::Troll`.
+    pub fn troll_capture_all(&mut self, troll: Coord) -> MoveResult {
+        if self.get(troll) != Piece::Troll {
+            return Err(ThudError::IllegalMove);
+        }
+
+        for target in self.get_adjacent(troll) {
+            if self.get(target) == Piece::Dwarf {
+                self.place(target, Piece::Empty);
             }
         }
 
@@ -252,6 +228,50 @@ impl Board {
 
         Ok(())
     }
+
+    fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {
+        let coord = loc;
+        let mut result: Vec<(Coord, Piece)> = Vec::new();
+
+        while let Ok(coord) = dir.modify(coord) {
+            result.push((coord, self.get(coord)));
+        }
+        result
+    }
+
+    fn verify_clear(&self, src: Coord, dest: Coord) -> MoveResult {
+        // Raycast to check for obstacles
+        if let Ok(dir) = Direction::from_route(src, dest) {
+            let cast = self.cast(src, dir);
+            // Skip the first member of the list, which is the square with the src on
+            for (current, piece) in &cast[1..] {
+                if *piece != Piece::Empty {
+                    // There is something in the way
+                    return Err(ThudError::IllegalMove);
+                }
+                if *current == dest {
+                    // Stop at the target square
+                    break;
+                }
+            }
+        } else {
+            // The source and target are not on a straight line
+            return Err(ThudError::IllegalMove);
+        }
+
+        Ok(())
+    }
+
+    fn count_line(&self, start: Coord, dir: Direction, piece: Piece) -> usize {
+        let mut length = 0;
+        for (_, cur_piece) in self.cast(start, dir) {
+            if cur_piece != piece {
+                break;
+            }
+            length += 1;
+        }
+        length
+    }
 }
 
 #[cfg(test)]
@@ -259,40 +279,24 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test]
-    fn place_piece() {
+    #[test_case((8,3), Piece::Troll)]
+    fn place_piece(loc: (usize, usize), piece: Piece) {
         let mut board = Board::default();
-        let loc: Coord = (8, 8).into();
-        board.place(loc, Piece::Dwarf);
-        assert_eq!(board.get(loc), Piece::Dwarf);
+        let coord = loc.into();
+        board.place(coord, piece);
+        assert_eq!(board.get(coord), piece);
     }
 
-    #[test]
-    fn place_pieces() {
-        let mut board = Board::default();
-        let locs = (
-            Coord::zero_based(9, 9).unwrap(),
-            Coord::zero_based(10, 10).unwrap(),
-        );
-        board.place(locs.0, Piece::Dwarf);
-        board.place(locs.1, Piece::Troll);
-        assert_eq!(board.get(locs.0), Piece::Dwarf);
-        assert_eq!(board.get(locs.1), Piece::Troll);
-    }
-
-    #[test]
-    fn fresh_correct() {
-        let board = Board::fresh();
-
-        // thudstone
-        assert_eq!(board.get((7, 7).into()), Piece::Thudstone);
-
-        // trolls
-        assert_eq!(board.get((8, 7).into()), Piece::Troll);
-        assert_eq!(board.get((8, 7).into()), Piece::Troll);
-
-        // dwarves
-        assert_eq!(board.get((0, 5).into()), Piece::Dwarf);
+    // thudstone
+    #[test_case((7, 7) => Piece::Thudstone)]
+    // trolls
+    #[test_case((8, 7) => Piece::Troll)]
+    #[test_case((8, 8) => Piece::Troll)]
+    #[test_case((6, 6) => Piece::Troll)]
+    // dwarves
+    #[test_case((0, 5) => Piece::Dwarf)]
+    fn fresh_correct(loc: (usize, usize)) -> Piece {
+        Board::fresh().get(loc.into())
     }
 
     #[test_case(0, 7 => 5)]
@@ -307,7 +311,7 @@ mod tests {
     #[test_case((8, 8), (9, 9))]
     #[test_case((8, 8), (10, 10) => panics "no")]
     #[test_case((8, 8), (7, 7) => panics "no")]
-    fn troll_move(src: (usize, usize), dest: (usize, usize)) {
+    fn troll_move_fresh(src: (usize, usize), dest: (usize, usize)) {
         Board::fresh()
             .troll_move(src.into(), dest.into())
             .expect("no");
