@@ -4,6 +4,8 @@ use crate::piece::Piece;
 use crate::EndState;
 use crate::Player;
 use crate::ThudError;
+#[cfg(serialize)]
+use serde::{Deserialize, Serialize};
 
 /// Represents the positioning of the Thud [`Piece`s](enum.Piece.html) on the board
 ///
@@ -11,10 +13,39 @@ use crate::ThudError;
 /// As a result, the movement methods provided only perform checks according to the pieces on the
 /// board, but they will *not* check whether the move is valid in terms of turn progress - you
 /// should use the methods on [`Thud`](struct.Thud.html) for that.
+#[cfg_attr(feature = "serialise", derive(Serialize, Deserialize))]
 #[derive(Debug, Default)]
 pub struct Board {
     // 1-based indexing
     squares: [[Piece; 15]; 15],
+}
+
+pub struct RayCast<'a> {
+    board: &'a Board,
+    next_place: Result<Coord, ThudError>,
+    dir: Direction,
+}
+
+impl<'a> RayCast<'a> {
+    fn new(board: &'a Board, start: Coord, dir: Direction) -> Self {
+        RayCast {
+            board,
+            next_place: dir.modify(start),
+            dir,
+        }
+    }
+}
+
+impl<'a> Iterator for RayCast<'a> {
+    type Item = (Coord, Piece);
+    fn next(&mut self) -> Option<(Coord, Piece)> {
+        if let Ok(coord) = self.next_place {
+            self.next_place = self.dir.modify(coord);
+            Some((coord, self.board.get(coord)))
+        } else {
+            None
+        }
+    }
 }
 
 type MoveResult = Result<(), ThudError>;
@@ -81,11 +112,11 @@ impl Board {
     /// use thud::{Board, Piece, Coord};
     ///
     /// let board = Board::fresh();
-    /// let stone = board.get_army(Piece::Thudstone);
+    /// let stone = board.army(Piece::Thudstone);
     ///
     /// assert_eq!(stone[0].value(), (7, 7));
     /// ```
-    pub fn get_army(&self, piece_type: Piece) -> Vec<Coord> {
+    pub fn army(&self, piece_type: Piece) -> Vec<Coord> {
         let mut result: Vec<Coord> = Vec::new();
         for x in 0..15 {
             for y in 0..15 {
@@ -102,7 +133,7 @@ impl Board {
     /// Get a vector of valid [`Coord`s](struct.Coord.html) in the 8 possible adjacent squares to the one given.
     ///
     /// Coordinates out of board bounds will not be included.
-    pub fn get_adjacent(&self, square: Coord) -> Vec<(Coord, Piece)> {
+    pub fn adjacent(&self, square: Coord) -> Vec<(Coord, Piece)> {
         let mut adjacent: Vec<(Coord, Piece)> = Vec::with_capacity(8);
 
         for dir in Direction::all() {
@@ -157,7 +188,7 @@ impl Board {
         self.verify_clear(troll, target)?;
 
         let dwarves: Vec<(Coord, Piece)> = self
-            .get_adjacent(target)
+            .adjacent(target)
             .into_iter()
             .filter(|(_, x)| *x == Piece::Dwarf)
             .collect();
@@ -244,7 +275,7 @@ impl Board {
     /// Returns [`Err(ThudError::IllegalMove)`](enum.ThudError.html) if:
     ///
     /// - square `dwarf` is not [`Piece::Dwarf`](enum.Piece.html)
-    /// - square `target` is not either [`Piece::Empty`](enum.Piece.html) or [`Piece::Troll`](enum.Piece.html)
+    /// - square `target` is not [`Piece::Troll`](enum.Piece.html)
     ///
     /// Returns [`Err(ThudError::Obstacle)`](enum.ThudError.html) if there is a piece in the way.
     ///
@@ -252,10 +283,7 @@ impl Board {
     /// square is larger than the length of the line of dwarves going in the other direction
     pub fn dwarf_hurl(&mut self, dwarf: Coord, target: Coord) -> MoveResult {
         // We now need to check if the target is *either* a troll or empty
-        if self.get(dwarf) != Piece::Dwarf
-            || self.get(target) != Piece::Troll
-            || self.get(target) != Piece::Empty
-        {
+        if self.get(dwarf) != Piece::Dwarf || self.get(target) != Piece::Troll {
             return Err(ThudError::IllegalMove);
         }
         self.verify_clear(dwarf, target)?;
@@ -307,9 +335,11 @@ impl Board {
                 // any empty squares we find
                 for dir in Direction::all() {
                     let behind_line = self.count_line(loc, dir.opposite(), Piece::Troll);
-                    for (poss, piece) in &self.cast(loc, dir)[..behind_line] {
-                        match *piece {
-                            Piece::Empty => avail.push(*poss),
+                    let mut cast = self.cast(loc, dir);
+                    cast.next();
+                    for (poss, piece) in cast.take(behind_line) {
+                        match piece {
+                            Piece::Empty => avail.push(poss),
                             _ => break,
                         }
                     }
@@ -331,13 +361,13 @@ impl Board {
     pub fn winner(&self) -> Option<EndState> {
         // Check dwarves
         let mut dwarf_moves = 0;
-        for dwarf in self.get_army(Piece::Dwarf) {
+        for dwarf in self.army(Piece::Dwarf) {
             dwarf_moves += self.available_moves(dwarf).len();
         }
 
         // Check trolls
         let mut troll_moves = 0;
-        for troll in self.get_army(Piece::Troll) {
+        for troll in self.army(Piece::Troll) {
             troll_moves += self.available_moves(troll).len();
         }
 
@@ -359,20 +389,13 @@ impl Board {
     ///
     /// Given in format `(<dwarf score>, <troll score>)`
     pub fn score(&self) -> (usize, usize) {
-        let dwarves = self.get_army(Piece::Dwarf).len();
-        let trolls = self.get_army(Piece::Troll).len() * 4;
+        let dwarves = self.army(Piece::Dwarf).len();
+        let trolls = self.army(Piece::Troll).len() * 4;
         (dwarves, trolls)
     }
 
-    fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {
-        let mut coord = loc;
-        let mut result: Vec<(Coord, Piece)> = Vec::new();
-
-        while let Ok(next) = dir.modify(coord) {
-            result.push((next, self.get(next)));
-            coord = next;
-        }
-        result
+    fn cast(&self, loc: Coord, dir: Direction) -> RayCast {
+        RayCast::new(self, loc, dir)
     }
 
     fn verify_clear(&self, src: Coord, dest: Coord) -> MoveResult {
@@ -398,7 +421,7 @@ impl Board {
         }
 
         let mut length = 1;
-        for (_, cur_piece) in dbg!(self.cast(start, dir)) {
+        for (_, cur_piece) in self.cast(start, dir) {
             if cur_piece != piece {
                 break;
             }
@@ -438,7 +461,7 @@ mod tests {
     #[test_case(7, 14 => 5)]
     #[test_case(14, 7 => 5)]
     fn adjacent(x: usize, y: usize) -> usize {
-        Board::default().get_adjacent((x, y).into()).len()
+        Board::default().adjacent((x, y).into()).len()
     }
 
     #[test_case((8, 7), (9, 7))]
@@ -448,6 +471,20 @@ mod tests {
     fn troll_move(src: (usize, usize), dest: (usize, usize)) {
         let mut board = Board::fresh();
         board.troll_move(src.into(), dest.into()).expect("");
+        assert_eq!(board.get(src.into()), Piece::Empty);
+        assert_eq!(board.get(dest.into()), Piece::Troll);
+    }
+
+    #[test_case(vec![(3, 6), (4, 6), (5, 6)], (8, 6), (13, 6))]
+    #[test_case(vec![(6, 5)], (8, 7), (11, 10))]
+    #[test_case(vec![], (8, 6), (13, 6) => panics "")]
+    #[test_case(vec![(3, 6), (4, 6), (5, 6)], (8, 6), (12, 6) => panics "")]
+    fn troll_shove(pre_places: Vec<(usize, usize)>, src: (usize, usize), dest: (usize, usize)) {
+        let mut board = Board::fresh();
+        for place in pre_places {
+            board.place(place.into(), Piece::Troll);
+        }
+        board.troll_shove(src.into(), dest.into()).expect("");
         assert_eq!(board.get(src.into()), Piece::Empty);
         assert_eq!(board.get(dest.into()), Piece::Troll);
     }
@@ -464,12 +501,26 @@ mod tests {
         assert_eq!(board.get(dest.into()), Piece::Dwarf);
     }
 
+    #[test_case(vec![(6, 1), (6, 2), (6, 3)], (6, 3), (6, 6))]
+    fn dwarf_hurl(pre_places: Vec<(usize, usize)>, src: (usize, usize), dest: (usize, usize)) {
+        let mut board = Board::fresh();
+        for place in pre_places {
+            board.place(place.into(), Piece::Dwarf);
+        }
+        board.dwarf_hurl(src.into(), dest.into()).expect("");
+        assert_eq!(board.get(src.into()), Piece::Empty);
+        assert_eq!(board.get(dest.into()), Piece::Dwarf);
+    }
+
     #[test_case((7, 6), Direction::Up => 8)]
     #[test_case((5, 0), Direction::Down => 0)]
     #[test_case((3, 6), Direction::UpLeft => 3)]
     #[test_case((14, 9), Direction::DownLeft => 9)]
     fn cast_len(loc: (usize, usize), dir: Direction) -> usize {
-        dbg!(Board::default().cast(loc.into(), dir)).len()
+        dbg!(Board::default()
+            .cast(loc.into(), dir)
+            .collect::<Vec<(Coord, Piece)>>())
+        .len()
     }
 
     #[test]
@@ -477,14 +528,14 @@ mod tests {
         let mut board = Board::default();
         board.place((7, 7).into(), Piece::Thudstone);
 
-        let cast = board.cast((7, 6).into(), Direction::Up);
+        let mut cast = board.cast((7, 6).into(), Direction::Up);
 
-        assert_eq!(cast[0], ((7, 7).into(), Piece::Thudstone));
+        assert_eq!(cast.next(), Some(((7, 7).into(), Piece::Thudstone)));
 
         let mut current = 2;
-        for (next, piece) in &cast[1..] {
-            assert_eq!(*piece, Piece::Empty);
-            assert_eq!(*next, (7, 6 + current).into());
+        for (next, piece) in cast {
+            assert_eq!(piece, Piece::Empty);
+            assert_eq!(next, (7, 6 + current).into());
             current += 1;
         }
     }

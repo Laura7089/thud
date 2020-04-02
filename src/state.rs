@@ -31,7 +31,7 @@ impl Thud {
         }
     }
 
-    /// Wrapper for [`Board::winner()`](struct.Board.html)
+    /// Wrapper for [`Board::winner()`](struct.Board.html#method.winner)
     pub fn winner(&mut self) -> Option<EndState> {
         // Note: checks cached game state, otherwise runs Board::winner()
         match self.state {
@@ -46,7 +46,7 @@ impl Thud {
         }
     }
 
-    /// Wrapper for [`Board::score()`](struct.Board.html)
+    /// Wrapper for [`Board::score()`](struct.Board.html#method.score)
     pub fn score(&self) -> (usize, usize) {
         self.board.score()
     }
@@ -58,7 +58,8 @@ impl Thud {
     /// Should the troll player not wish to make a capture, they may call
     /// [`.troll_cap()`](#method.troll_cap) with an empty `Vec`.
     ///
-    /// Will pass errors from [`Board.dwarf_move()` and `Board.troll_move()`](struct.Board.html).
+    /// Will pass errors from [`Board.dwarf_move()`](struct.Board.html#method.dwarf_move)
+    /// and [`Board.troll_move()`](struct.Board.html#method.troll_move).
     pub fn move_piece(&mut self, src: Coord, target: Coord) -> Result<(), ThudError> {
         match self.state {
             // If it's the dwarf player, move the dwarf and end the turn

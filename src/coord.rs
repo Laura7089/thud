@@ -1,6 +1,9 @@
 use crate::ThudError;
+#[cfg(serialize)]
+use serde::{Deserialize, Serialize};
 
 /// Checked container for a coordinate to address into a [`Board`](enum.Board.html)
+#[cfg_attr(feature = "serialise", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Coord {
     x: usize,
@@ -65,12 +68,16 @@ impl Coord {
     /// ```
     /// use thud::Coord;
     ///
-    /// let source = Coord::zero_based(7,7).unwrap();
-    /// let destination1 = Coord::zero_based(10, 10).unwrap();
-    /// let destination2 = Coord::zero_based(12, 7).unwrap();
+    /// # use thud::ThudError;
+    /// # fn main () -> Result<(), ThudError> {
+    /// let source = Coord::zero_based(7,7)?;
+    /// let destination1 = Coord::zero_based(10, 10)?;
+    /// let destination2 = Coord::zero_based(12, 7)?;
     ///
     /// assert_eq!(source.diff(destination1).max(), 3);
     /// assert_eq!(source.diff(destination2).max(), 5);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn max(&self) -> usize {
         if self.x > self.y {

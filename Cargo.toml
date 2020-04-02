@@ -13,3 +13,7 @@ readme = "README.md"
 
 [dependencies]
 test-case = "1.0.0"
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+[features]
+serialize = ["serde"]
