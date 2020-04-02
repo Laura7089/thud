@@ -12,6 +12,9 @@
 <a href="https://travis-ci.com/github/Laura7089/thud">
   <img src="https://travis-ci.com/Laura7089/thud.svg?branch=master" alt="travis build">
 </a>
+<a href="https://codecov.io/gh/Laura7089/thud">
+  <img src="https://img.shields.io/codecov/c/gh/Laura7089/thud.svg" alt="codecov coverage">
+</a>
 </div>
 
 ***
