@@ -1,6 +1,7 @@
 use crate::coord::Coord;
 use crate::direction::Direction;
 use crate::piece::Piece;
+use crate::EndState;
 use crate::Player;
 use crate::ThudError;
 
@@ -276,6 +277,7 @@ impl Board {
         Ok(())
     }
 
+    /// Get a `Vec` of [`Coord`s](struct.Coord.html) that the piece at `loc` can make
     pub fn available_moves(&self, loc: Coord) -> Vec<Coord> {
         let mut avail: Vec<Coord> = Vec::new();
         match self.get(loc) {
@@ -320,26 +322,47 @@ impl Board {
         avail
     }
 
-    pub fn winner(&self) -> Option<Player> {
+    /// Find if there is a winner or the game is over.
+    ///
+    /// Returns:
+    ///
+    /// - [`Some(EndState::Won(Player))`](enum.EndState.html) if a player has won the match
+    /// - [`Some(EndState::Draw)`](enum.EndState.html) if the match is a draw
+    /// - `None` if the board still has moves to play
+    pub fn winner(&self) -> Option<EndState> {
         // Check dwarves
         let mut dwarf_moves = 0;
         for dwarf in self.get_army(Piece::Dwarf) {
             dwarf_moves += self.available_moves(dwarf).len();
         }
 
-        // Check dwarves
+        // Check trolls
         let mut troll_moves = 0;
         for troll in self.get_army(Piece::Troll) {
             troll_moves += self.available_moves(troll).len();
         }
 
-        if dwarf_moves == 0 {
-            Some(Player::Troll)
-        } else if troll_moves == 0 {
-            Some(Player::Troll)
+        if troll_moves == 0 || dwarf_moves == 0 {
+            let (dwarf_score, troll_score) = self.score();
+            if dwarf_score > troll_score {
+                Some(EndState::Won(Player::Dwarf))
+            } else if troll_score > dwarf_score {
+                Some(EndState::Won(Player::Troll))
+            } else {
+                Some(EndState::Draw)
+            }
         } else {
             None
         }
+    }
+
+    /// Get the scores of each player
+    ///
+    /// Given in format `(<dwarf score>, <troll score>)`
+    pub fn score(&self) -> (usize, usize) {
+        let dwarves = self.get_army(Piece::Dwarf).len();
+        let trolls = self.get_army(Piece::Troll).len() * 4;
+        (dwarves, trolls)
     }
 
     fn cast(&self, loc: Coord, dir: Direction) -> Vec<(Coord, Piece)> {

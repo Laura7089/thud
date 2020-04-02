@@ -1,8 +1,4 @@
-use crate::Board;
-use crate::Coord;
-use crate::Direction;
-use crate::Player;
-use crate::ThudError;
+use crate::*;
 
 /// Stores the current state of a game of Thud
 pub struct Thud {
@@ -14,7 +10,7 @@ pub struct Thud {
 enum GameState {
     Nominal(Player),
     PostTrollMove(bool),
-    GameEnded(Player),
+    GameEnded(EndState),
 }
 
 impl Thud {
@@ -35,8 +31,9 @@ impl Thud {
         }
     }
 
-    /// Find if there is a winner
-    pub fn winner(&mut self) -> Option<Player> {
+    /// Wrapper for [`Board::winner()`](struct.Board.html)
+    pub fn winner(&mut self) -> Option<EndState> {
+        // Note: checks cached game state, otherwise runs Board::winner()
         match self.state {
             GameState::GameEnded(p) => Some(p),
             _ => match self.board.winner() {
@@ -47,6 +44,11 @@ impl Thud {
                 None => None,
             },
         }
+    }
+
+    /// Wrapper for [`Board::score()`](struct.Board.html)
+    pub fn score(&self) -> (usize, usize) {
+        self.board.score()
     }
 
     /// Move a piece of the player whose turn it is

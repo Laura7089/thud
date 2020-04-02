@@ -17,6 +17,13 @@ pub enum Player {
     Troll,
 }
 
+/// Represents what victory condition a [`Thud`](struct.Thud.html) is in once it has ended
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub enum EndState {
+    Won(Player),
+    Draw,
+}
+
 /// Reports invalid action
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ThudError {
