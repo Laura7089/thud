@@ -1,6 +1,12 @@
 use super::*;
 use test_case::test_case;
 
+// TODO write tests for:
+// - troll_capture
+// - score
+// - winner
+// - available_moves
+
 #[test_case((8,3), Piece::Troll)]
 fn place_piece(loc: (usize, usize), piece: Piece) {
     let mut board = Board::default();
