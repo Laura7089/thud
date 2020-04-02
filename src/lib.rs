@@ -1,3 +1,16 @@
+//! `thud` is a crate for hosting a game of
+//! [Thud](https://www.boardgamegeek.com/boardgame/4532/thud).
+//!
+//! ## Getting Started
+//!
+//! To get started, take a look at the [`Thud`](struct.Thud.html) `struct`.
+//!
+//! ## Serde
+//!
+//! The library supports serialising and deserialising all types using
+//! [`serde`](https://serde.rs/).
+//! To use this, enable the `serialize` feature.
+
 mod board;
 mod coord;
 mod direction;

@@ -16,7 +16,7 @@ mod test;
 /// board, but they will *not* check whether the move is valid in terms of turn progress - you
 /// should use the methods on [`Thud`](struct.Thud.html) for that.
 #[cfg_attr(feature = "serialise", derive(Serialize, Deserialize))]
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Board {
     // 1-based indexing
     squares: [[Piece; 15]; 15],

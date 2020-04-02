@@ -2,7 +2,7 @@ use crate::*;
 
 /// Stores the current state of a game of Thud
 pub struct Thud {
-    pub board: Board,
+    board: Board,
     state: GameState,
 }
 
@@ -22,13 +22,21 @@ impl Thud {
         }
     }
 
-    /// Find which player's turn it is
-    pub fn get_turn(&self) -> Option<Player> {
+    /// Find which player's turn it is.
+    ///
+    /// Will return `Some(Player)` if the game is still in progress, or if the game is ended
+    /// `None` will be returned.
+    pub fn turn(&self) -> Option<Player> {
         match self.state {
             GameState::Nominal(p) => Some(p),
             GameState::PostTrollMove(_) => Some(Player::Troll),
             GameState::GameEnded(_) => None,
         }
+    }
+
+    /// Get a copy of the current [`Board`](struct.Board.html)
+    pub fn board(&self) -> Board {
+        self.board
     }
 
     /// Wrapper for [`Board::winner()`](struct.Board.html#method.winner)
