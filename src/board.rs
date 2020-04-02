@@ -161,7 +161,6 @@ impl Board {
             .into_iter()
             .filter(|(_, x)| *x == Piece::Dwarf)
             .collect();
-
         if dwarves.len() == 0 {
             return Err(ThudError::IllegalMove);
         }
@@ -447,9 +446,22 @@ mod tests {
     #[test_case((8, 8), (10, 10) => panics "")]
     #[test_case((8, 8), (7, 7) => panics "")]
     fn troll_move(src: (usize, usize), dest: (usize, usize)) {
-        Board::fresh()
-            .troll_move(src.into(), dest.into())
-            .expect("");
+        let mut board = Board::fresh();
+        board.troll_move(src.into(), dest.into()).expect("");
+        assert_eq!(board.get(src.into()), Piece::Empty);
+        assert_eq!(board.get(dest.into()), Piece::Troll);
+    }
+
+    #[test_case((6, 0), (6, 5))]
+    #[test_case((6, 0), (10, 4))]
+    #[test_case((4, 13), (12, 5))]
+    #[test_case((8, 0), (8, 12) => panics "")]
+    #[test_case((1, 4), (0, 5) => panics "")]
+    fn dwarf_move(src: (usize, usize), dest: (usize, usize)) {
+        let mut board = Board::fresh();
+        board.dwarf_move(src.into(), dest.into()).expect("");
+        assert_eq!(board.get(src.into()), Piece::Empty);
+        assert_eq!(board.get(dest.into()), Piece::Dwarf);
     }
 
     #[test_case((7, 6), Direction::Up => 8)]
