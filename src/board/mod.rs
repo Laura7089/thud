@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(test)]
 mod test;
 
-/// Represents the positioning of the Thud [`Piece`s](enum.Piece.html) on the board
+/// A configuration of Thud [`Piece`s](enum.Piece.html) on a Thud board
 ///
 /// **Note**: `Board` is not aware of the whole state of the game, only the position of the pieces.
 /// As a result, the movement methods provided only perform checks according to the pieces on the

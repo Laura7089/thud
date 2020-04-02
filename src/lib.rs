@@ -5,11 +5,12 @@
 //!
 //! To get started, take a look at the [`Thud`](struct.Thud.html) `struct`.
 //!
-//! ## Serde
+//! ## Extra Features
+//!
+//! ### serialize
 //!
 //! The library supports serialising and deserialising all types using
 //! [`serde`](https://serde.rs/).
-//! To use this, enable the `serialize` feature.
 
 mod board;
 mod coord;
@@ -23,14 +24,14 @@ pub use direction::Direction;
 pub use piece::Piece;
 pub use state::Thud;
 
-/// Represents one of the two Thud players
+/// One of the two Thud players
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Player {
     Dwarf,
     Troll,
 }
 
-/// Represents what victory condition a [`Thud`](struct.Thud.html) is in once it has ended
+/// What victory condition a [`Thud`](struct.Thud.html) game is in once it has ended
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum EndState {
     Won(Player),

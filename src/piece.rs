@@ -1,7 +1,7 @@
 #[cfg(serialize)]
 use serde::{Deserialize, Serialize};
 
-/// Represents a piece on the Thud board
+/// A piece on the Thud [`Board`](struct.Board.html)
 ///
 /// **Note**: Empty squares are modelled as `Piece`s too, to avoid the horror of `Option<Piece>`
 /// everywhere.

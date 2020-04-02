@@ -1,7 +1,7 @@
 use crate::coord::Coord;
 use crate::ThudError;
 
-/// Represents a cardinal direction on a `Board`
+/// A cardinal direction on a [`Board`](struct.Board.html)
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Direction {
     Up,
