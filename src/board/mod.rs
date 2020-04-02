@@ -7,7 +7,7 @@ use crate::{EndState, Player, ThudError};
 #[cfg(serialize)]
 use serde::{Deserialize, Serialize};
 #[cfg(test)]
-mod test;
+mod tests;
 
 /// A configuration of Thud [`Piece`s](enum.Piece.html) on a Thud board
 ///
