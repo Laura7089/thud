@@ -1,7 +1,10 @@
 use crate::coord::Coord;
 use crate::ThudError;
+#[cfg(serialize)]
+use serde::{Deserialize, Serialize};
 
 /// A cardinal direction on a [`Board`](struct.Board.html)
+#[cfg_attr(feature = "serialise", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Direction {
     Up,

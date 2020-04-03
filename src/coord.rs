@@ -49,10 +49,10 @@ impl Coord {
         Ok(Coord { x, y })
     }
 
-    pub fn one_based(x: usize, y: usize) -> Result<Self, ThudError> {
-        let (x, y) = (x - 1, y - 1);
-        Self::zero_based(x, y)
-    }
+    // pub fn one_based(x: usize, y: usize) -> Result<Self, ThudError> {
+    //     let (x, y) = (x - 1, y - 1);
+    //     Self::zero_based(x, y)
+    // }
 
     /// Get the values inside the coordinate, zero-based.
     ///

@@ -1,7 +1,13 @@
 language: rust
 
+script:
+  - cargo build --verbose --all-features
+  - cargo test --verbose --all-features
+
 rust:
   - stable
+
+cache: cargo
 
 addons:
   apt:
