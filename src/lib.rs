@@ -5,9 +5,7 @@
 //!
 //! To get started, take a look at the [`Thud`](struct.Thud.html) `struct`.
 //!
-//! ## Extra Features
-//!
-//! ### feature = "serialize"
+//! ### `serialize` feature
 //!
 //! The library supports serialising and deserialising all types using
 //! [`serde`](https://serde.rs/) when this feature is enabled.
