@@ -9,18 +9,11 @@ homepage = "https://github.com/Laura7089/thud"
 repository = "https://github.com/Laura7089/thud.git"
 readme = "README.md"
 
-[lib]
-crate-type = ["lib", "cdylib"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+serialize = ["serde"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"], optional = true }
-libc = { version = "0.2.68", optional = true }
 
 [dev-dependencies]
 test-case = "1.0.0"
-
-[features]
-serialize = ["serde"]
-ffi = ["libc"]
