@@ -1,3 +1,8 @@
+//! Foreign Function Interface bindings
+//!
+//! The functions provided in this module can be called as C functions from non-rust languages.
+//! Hopefully, this will allow clients to be developed in other ecosystems, dependent on this
+//! library but not tied to using rust.
 use crate::state::Thud;
 use crate::Coord;
 use crate::Direction;
@@ -5,6 +10,7 @@ use crate::EndState;
 use crate::Player;
 use libc::c_uint;
 
+/// Wrapper for [`Thud::new()`](struct.Thud.html#method.new)
 #[no_mangle]
 pub extern "C" fn thud_new() -> *mut Thud {
     Box::into_raw(Box::new(Thud::new()))
