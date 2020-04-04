@@ -73,6 +73,7 @@ fn dwarf_move(src: (usize, usize), dest: (usize, usize)) {
 }
 
 #[test_case(vec![(6, 1), (6, 2), (6, 3)], (6, 3), (6, 6))]
+#[test_case(vec![(3, 10), (4, 9)], (4, 9), (6, 7))]
 fn dwarf_hurl(pre_places: Vec<(usize, usize)>, src: (usize, usize), dest: (usize, usize)) {
     let mut board = Board::fresh();
     for place in pre_places {

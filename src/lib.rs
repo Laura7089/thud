@@ -7,15 +7,15 @@
 //!
 //! ## Extra Features
 //!
-//! ### serialize
+//! ### feature = "serialize"
 //!
 //! The library supports serialising and deserialising all types using
-//! [`serde`](https://serde.rs/).
+//! [`serde`](https://serde.rs/) when this feature is enabled.
 
 mod board;
 mod coord;
 mod direction;
-#[cfg(ffi)]
+#[cfg(feature = "ffi")]
 mod ffi;
 mod piece;
 mod state;
@@ -24,12 +24,12 @@ pub use board::Board;
 pub use coord::Coord;
 pub use direction::Direction;
 pub use piece::Piece;
-#[cfg(serialize)]
+#[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
 pub use state::Thud;
 
 /// One of the two Thud players
-#[cfg_attr(feature = "serialise", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Player {
     Dwarf,
@@ -37,7 +37,7 @@ pub enum Player {
 }
 
 /// What victory condition a [`Thud`](struct.Thud.html) game is in once it has ended
-#[cfg_attr(feature = "serialise", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum EndState {
     Won(Player),
@@ -45,7 +45,7 @@ pub enum EndState {
 }
 
 /// Reports invalid action
-#[cfg_attr(feature = "serialise", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ThudError {
     /// A coordinate was intialised with a position out of bounds

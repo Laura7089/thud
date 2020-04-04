@@ -24,6 +24,20 @@ impl Direction {
         vec![Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft]
     }
 
+    pub fn from_num(dir: usize) -> Result<Self, ThudError> {
+        match dir {
+            0 => Ok(Direction::Right),
+            1 => Ok(Direction::DownRight),
+            2 => Ok(Direction::Down),
+            3 => Ok(Direction::DownLeft),
+            4 => Ok(Direction::Left),
+            5 => Ok(Direction::UpLeft),
+            6 => Ok(Direction::Up),
+            7 => Ok(Direction::UpRight),
+            _ => Err(ThudError::MathError),
+        }
+    }
+
     /// Use two [`Coord`s](struct.Coord.html) to get a `Direction` from one to the other
     ///
     /// Returns [`Err(ThudError::MathError)`](enum.ThudError.html) if:

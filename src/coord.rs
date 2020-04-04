@@ -1,9 +1,9 @@
 use crate::ThudError;
-#[cfg(serialize)]
+#[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
 
 /// Checked container for a coordinate to address into a [`Board`](enum.Board.html)
-#[cfg_attr(feature = "serialise", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Coord {
     x: usize,

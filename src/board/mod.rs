@@ -4,7 +4,7 @@ use crate::direction::Direction;
 use crate::piece::Piece;
 use crate::{EndState, Player, ThudError};
 
-#[cfg(serialize)]
+#[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
 #[cfg(test)]
 mod tests;
@@ -15,7 +15,7 @@ mod tests;
 /// As a result, the movement methods provided only perform checks according to the pieces on the
 /// board, but they will *not* check whether the move is valid in terms of turn progress - you
 /// should use the methods on [`Thud`](struct.Thud.html) for that.
-#[cfg_attr(feature = "serialise", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Debug, Copy, Clone, Default)]
 pub struct Board {
     // 1-based indexing
@@ -256,7 +256,6 @@ impl Board {
     /// Returns [`Err(ThudError::LineTooShort)`](enum.ThudError.html) if the distance to the target
     /// square is larger than the length of the line of dwarves going in the other direction
     pub fn dwarf_hurl(&mut self, dwarf: Coord, target: Coord) -> MoveResult {
-        // We now need to check if the target is *either* a troll or empty
         if self.get(dwarf) != Piece::Dwarf || self.get(target) != Piece::Troll {
             return Err(ThudError::IllegalMove);
         }
