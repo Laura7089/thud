@@ -88,3 +88,16 @@ pub unsafe extern "C" fn thud_troll_cap(
         _ => 1,
     }
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn thud_get_board(thud_raw: *const Thud) -> [[c_uint; 15]; 15] {
+    let thud = &*thud_raw;
+    let board = thud.board().full_raw();
+    let mut result = [[0; 15]; 15];
+    for x in 0..15 {
+        for y in 0..15 {
+            result[x][y] = board[x][y].into_int() as c_uint;
+        }
+    }
+    result
+}

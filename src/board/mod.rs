@@ -80,6 +80,10 @@ impl Board {
         self.squares[x][y]
     }
 
+    pub fn full_raw(&self) -> [[Piece; 15]; 15] {
+        self.squares
+    }
+
     /// Return a vector of all the [`Coord`s](struct.Coord.html) of squares occupied by the given piece type.
     ///
     /// ```

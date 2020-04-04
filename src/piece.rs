@@ -19,3 +19,15 @@ impl Default for Piece {
         Self::Empty
     }
 }
+
+#[cfg(feature = "ffi")]
+impl Piece {
+    pub fn into_int(&self) -> usize {
+        match self {
+            Piece::Empty => 0,
+            Piece::Dwarf => 1,
+            Piece::Troll => 2,
+            Piece::Thudstone => 3,
+        }
+    }
+}
