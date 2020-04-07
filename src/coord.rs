@@ -25,7 +25,7 @@ impl Coord {
             || (9 + x < y);
 
         if invalid {
-            Err(ThudError::InvalidPosition)
+            Err(ThudError::InvalidPosition(x, y))
         } else {
             Ok(())
         }

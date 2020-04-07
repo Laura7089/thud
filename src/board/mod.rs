@@ -180,9 +180,10 @@ impl Board {
             Direction::from_route(target, troll).unwrap(),
             Piece::Troll,
         );
-        if troll.diff(target).max() > troll_len {
+        let dist = troll.diff(target).max();
+        if dist > troll_len {
             // Move is too far
-            return Err(ThudError::LineTooShort);
+            return Err(ThudError::LineTooShort(dist, troll_len));
         }
 
         // Move the troll
@@ -266,13 +267,14 @@ impl Board {
         self.verify_clear(dwarf, target)?;
 
         // Make sure there are enough supporting dwarves
-        if self.count_line(
+        let dwarf_len = self.count_line(
             dwarf,
             Direction::from_route(target, dwarf).unwrap(),
             Piece::Dwarf,
-        ) < dwarf.diff(target).max()
-        {
-            return Err(ThudError::LineTooShort);
+        );
+        let dist = dwarf.diff(target).max();
+        if dwarf_len < dist {
+            return Err(ThudError::LineTooShort(dist, dwarf_len));
         }
 
         self.place(dwarf, Piece::Empty);
@@ -385,7 +387,8 @@ impl Board {
             }
             if piece != Piece::Empty {
                 // There is something in the way
-                return Err(ThudError::Obstacle);
+                let (x, y) = current.value();
+                return Err(ThudError::Obstacle(x, y));
             }
         }
 

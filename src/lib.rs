@@ -16,6 +16,8 @@ mod direction;
 mod piece;
 mod state;
 
+use thiserror::Error;
+
 pub use board::Board;
 pub use coord::Coord;
 pub use direction::Direction;
@@ -42,18 +44,18 @@ pub enum EndState {
 
 /// Reports invalid action
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Error)]
 pub enum ThudError {
-    /// A coordinate was intialised with a position out of bounds
-    InvalidPosition,
-    /// The requested move is not allowed according to the rules of Thud
+    #[error("({0},{1}) is out of bounds")]
+    InvalidPosition(usize, usize),
+    #[error("Requested move not allowed")]
     IllegalMove,
-    /// There is a piece blocking that move
-    Obstacle,
-    /// A shove or hurl has been attempted with too few supporting dwarves/trolls
-    LineTooShort,
-    /// An arithmetic error
+    #[error("A piece at ({0},{1}) is blocking that move")]
+    Obstacle(usize, usize),
+    #[error("You need {0} pieces behind you to make that move but you only have {1}")]
+    LineTooShort(usize, usize),
+    #[error("Arithmetic Error")]
     MathError,
-    /// That action is not allowed at this time
+    #[error("Action not allowed at this point in the game")]
     BadAction,
 }
