@@ -1,12 +1,16 @@
 use crate::*;
+#[cfg(feature = "serialize")]
+use serde::{Deserialize, Serialize};
 
 /// Stores the current state of a game of Thud
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct Thud {
     board: Board,
     state: GameState,
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 enum GameState {
     Nominal(Player),
     PostTrollMove(bool),
