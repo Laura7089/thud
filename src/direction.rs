@@ -49,31 +49,32 @@ impl Direction {
             return Err(ThudError::MathError);
         }
 
-        let (src, dest) = (start.value(), end.value());
+        let (sx, sy) = start.value();
+        let (dx, dy) = end.value();
         let diff = start.diff(end).value();
 
-        if src.0 == dest.0 {
-            if src.1 < dest.1 {
+        if sx == dx {
+            if sy < dy {
                 Ok(Direction::Up)
             } else {
                 Ok(Direction::Down)
             }
-        } else if src.1 == dest.1 {
-            if src.0 < dest.0 {
+        } else if sy == dy {
+            if sx < dx {
                 Ok(Direction::Right)
             } else {
                 Ok(Direction::Left)
             }
         } else if diff.0 == diff.1 {
-            if src.0 < dest.0 {
-                if src.1 < dest.1 {
+            if sx < dx {
+                if sy < dy {
                     Ok(Direction::UpRight)
                 } else {
-                    Ok(Direction::UpLeft)
+                    Ok(Direction::DownRight)
                 }
             } else {
-                if src.1 < dest.1 {
-                    Ok(Direction::DownRight)
+                if sy < dy {
+                    Ok(Direction::UpLeft)
                 } else {
                     Ok(Direction::DownLeft)
                 }
@@ -170,6 +171,7 @@ mod tests {
 
     #[test_case((7,7), (8,8) => Direction::UpRight)]
     #[test_case((8,7), (0,7) => Direction::Left)]
+    #[test_case((4,9), (6,7) => Direction::DownRight)]
     #[test_case((7,7), (7,7) => panics "")]
     #[test_case((7,7), (8,9) => panics "")]
     fn from_route(src: (usize, usize), dest: (usize, usize)) -> Direction {

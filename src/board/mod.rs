@@ -378,7 +378,7 @@ impl Board {
     }
 
     fn verify_clear(&self, src: Coord, dest: Coord) -> MoveResult {
-        let dir = Direction::from_route(src, dest)?;
+        let dir = dbg!(Direction::from_route(src, dest)?);
         // Skip the first element
         for (current, piece) in self.cast(src, dir) {
             if current == dest {
