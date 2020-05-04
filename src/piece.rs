@@ -8,9 +8,13 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Piece {
+    #[cfg_attr(feature = "serialize", serde(rename = "dwarf"))]
     Dwarf,
+    #[cfg_attr(feature = "serialize", serde(rename = "troll"))]
     Troll,
+    #[cfg_attr(feature = "serialize", serde(rename = "thudstone"))]
     Thudstone,
+    #[cfg_attr(feature = "serialize", serde(rename = "empty"))]
     Empty,
 }
 
