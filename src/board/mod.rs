@@ -3,7 +3,6 @@ use crate::coord::Coord;
 use crate::direction::Direction;
 use crate::piece::Piece;
 use crate::{EndState, Player, ThudError};
-use std::cell::RefCell;
 
 #[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
@@ -17,10 +16,10 @@ mod tests;
 /// board, but they will *not* check whether the move is valid in terms of turn progress - you
 /// should use the methods on [`Thud`](struct.Thud.html) for that.
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Board {
     // 1-based indexing
-    squares: RefCell<[[Piece; 15]; 15]>,
+    squares: [[Piece; 15]; 15],
 }
 
 type MoveResult = Result<(), ThudError>;
@@ -72,17 +71,17 @@ impl Board {
     /// Put a [`Piece`](enum.Piece.html) on the board.
     pub fn place(&mut self, square: Coord, piece: Piece) {
         let (x, y) = square.value();
-        self.squares.borrow_mut()[x][y] = piece;
+        self.squares[x][y] = piece;
     }
 
     /// Find what [`Piece`](enum.Piece.html) is at the [`Coord`](struct.Coord.html) specified.
     pub fn get(&self, square: Coord) -> Piece {
         let (x, y) = square.value();
-        self.squares.borrow()[x][y]
+        self.squares[x][y]
     }
 
     pub fn full_raw(&self) -> [[Piece; 15]; 15] {
-        *self.squares.borrow()
+        self.squares
     }
 
     /// Return a vector of all the [`Coord`s](struct.Coord.html) of squares occupied by the given piece type.
@@ -99,7 +98,7 @@ impl Board {
         let mut result: Vec<Coord> = Vec::new();
         for x in 0..15 {
             for y in 0..15 {
-                if self.squares.borrow()[x][y] == piece_type {
+                if self.squares[x][y] == piece_type {
                     if let Ok(coord) = Coord::zero_based(x, y) {
                         result.push(coord);
                     }

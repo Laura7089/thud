@@ -38,6 +38,11 @@ impl Thud {
         }
     }
 
+    /// Get a copy of the current [`Board`](struct.Board.html)
+    pub fn board(&self) -> Board {
+        self.board
+    }
+
     /// Wrapper for [`Board::winner()`](struct.Board.html#method.winner)
     pub fn winner(&mut self) -> Option<EndState> {
         // Note: checks cached game state, otherwise runs Board::winner()
